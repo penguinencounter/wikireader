@@ -31,9 +31,29 @@ def generate_error_response(error_code: int, error_message: str) -> flask.Respon
 
 
 site_api_cache = {}
+site_id_cache = {}
 
 
-def guess_api_endpoint(req: flask.Request) -> typing.Union[flask.Response, str]:
+def get_id_for_addr(target_url: str) -> int:
+    global site_id_cache
+    if target_url in site_id_cache:
+        return site_id_cache[target_url]
+    # assign a new id
+    new = len(site_id_cache)
+    site_id_cache[new] = target_url
+    return new
+
+
+def request(site_id: int, req: flask.Request) -> flask.Response:
+    global site_id_cache
+    if site_id not in site_id_cache:
+        return generate_error_response(404, 'Bad site id')
+    target_url = site_id_cache[site_id]
+    # mirror the request to the target url (query params)
+    return requests.request(req.method, target_url, params=req.args)  # Should be enough?
+
+
+def guess_api_endpoint(req: flask.Request) -> flask.Response:
     global site_api_cache
     site = require_param(req, 'site')
     if site is None:
@@ -81,7 +101,8 @@ def guess_api_endpoint(req: flask.Request) -> typing.Union[flask.Response, str]:
             print('new endpoint to cache: ' + modified.geturl())
             result = {
                 'ok': True,
-                'result': modified.geturl()
+                'result': modified.geturl(),
+                'id': get_id_for_addr(modified.geturl())
             }
             site_api_cache[std] = result.copy()
             result['cached'] = False
