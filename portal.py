@@ -44,13 +44,24 @@ def get_id_for_addr(target_url: str) -> int:
     return new
 
 
-def request(site_id: int, req: flask.Request) -> flask.Response:
+GLOBAL_USER_AGENT = 'WikiReader-Portal/0.1 (en:PenguinEncounter2 miles.h.lin(at)gmail.com) <Source: {ua}, ip: {ip}> python-requests/2.28.1'
+
+
+def action(site_id: int, req: flask.Request) -> flask.Response:
     global site_id_cache
     if site_id not in site_id_cache:
         return generate_error_response(404, 'Bad site id')
     target_url = site_id_cache[site_id]
     # mirror the request to the target url (query params)
-    return requests.request(req.method, target_url, params=req.args)  # Should be enough?
+    heads = {
+        'User-Agent': GLOBAL_USER_AGENT.format(ua=req.user_agent, ip=req.remote_addr)
+    }
+    print('mirroring request to: ' + target_url)
+    print('ua is: ' + heads['User-Agent'])
+    r = requests.request(req.method, target_url, params=req.args, headers=heads)  # Should be enough?
+    resp = flask.make_response(r.content)
+    resp.mimetype = r.headers['Content-Type']
+    return resp
 
 
 def guess_api_endpoint(req: flask.Request) -> flask.Response:

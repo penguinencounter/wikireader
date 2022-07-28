@@ -9,4 +9,9 @@ def guess_api():
     return portal.guess_api_endpoint(request)
 
 
+@app.route('/portal/<int:site_id>/do')
+def do(site_id):
+    return portal.action(site_id, request)
+
+
 app.run(host='0.0.0.0', port=8080, debug=True)
