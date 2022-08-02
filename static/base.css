@@ -92,14 +92,6 @@ html, body {
     padding-left: 20px;
 }
 
-#overlays {
-    position: fixed;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 100;
-}
 .overlay-popup {
     position: fixed;
     left: 0;
@@ -113,12 +105,8 @@ html, body {
     justify-content: center;
     align-items: center;
 }
-.overlay-popup > * {
+.theme-astral .overlay-popup > * {
     padding: 10px;
-    background-color: rgba(0,0,0,0.5);
+    background: linear-gradient(to right, #8800be 0%, #0062be 100%);
     border-radius: 10px;
-}
-#overlays > * {
-    width: 100%;
-    height: 100%;
 }
