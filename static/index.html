@@ -4,10 +4,7 @@
         <title>WikiReader - %:Main Page</title>
         <!-- ES6 modules -->
         <script src="connector.mjs" type="module"></script>
-        <script src="fun.js" defer></script>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet"> 
+        <script src="control.js" defer></script>
         <link rel="stylesheet" href="base.css">
     </head>
     <body class="theme-astral">
@@ -20,17 +17,19 @@
                         <div style="height:10px;"></div>
                         <div class="text-mbig sidebar-text">Quickstart</div>
                         <div style="height:10px;"></div>
-                        <div class="button-sidebar-task">English Wikipedia</div>
+                        <div class="button-sidebar-task default-focus" tabindex="0" role="button">English Wikipedia</div>
                         <div style="height:20px;"></div>
-                        <div class="button-sidebar-task">Add Wiki...</div>
+                        <div class="button-sidebar-task" tabindex="0" role="button">Add Wiki...</div>
                         <div style="height:20px;"></div>
-                        <div class="button-sidebar-task">Import data...</div>
+                        <div class="button-sidebar-task" tabindex="0" role="button">Import data...</div>
                         <div style="height:5px;"></div>
-                        <div class="button-sidebar-task">Settings...</div>
+                        <div class="button-sidebar-task" tabindex="0" role="button">Settings...</div>
                     </div>
                     <div class="sidebar-space"></div>
                     <div class="sidebar-footer">
-                        <div class="button-sidebar-task">Report Proxy Abuse</div>
+                        <div class="button-sidebar-task show-only-focus" tabindex="0" role="button">Accessibility Mode</div>
+                        <div style="height:5px;"></div>
+                        <div class="button-sidebar-task" tabindex="0" role="button">Report Proxy Abuse</div>
                         <div style="height:5px;"></div>
                         <div class="sidebar-text">Copyright © 2022</div>
                         <div class="sidebar-text">PenguinEncounter</div>
@@ -41,7 +40,9 @@
         </div>
         <div id="qp" class="overlay-popup hidden shown fill">
             <div id="qp-box">
-                <input type="text" id="qp-query">
+                <div class="text-big">Command Prompt</div>
+                <div class="">No wiki open</div>
+                <input type="text" class="autofocus autoclean" aria-label="Command prompt input, press ESCAPE to close">
             </div>
         </div>
     </body>

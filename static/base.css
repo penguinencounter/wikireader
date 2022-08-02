@@ -1,3 +1,12 @@
+/* FONTS */
+@font-face {
+    font-family: 'Montserrat';
+    src: url('fonts/MontserratVar.ttf') format('truetype');
+    font-weight: 100 900;
+    
+}
+
+
 html, body {
     margin: 0;
     background: linear-gradient(to right, #000000 0%, #444444 100%);
@@ -86,10 +95,22 @@ html, body {
     user-select: none;
     transition: width 0.2s ease-in-out, background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
 }
-.button-sidebar-task:hover {
+.button-sidebar-task:hover, .button-sidebar-task:focus {
     background-color: rgba(0,0,0,0.7);
     width: calc(100% - 30px);
     padding-left: 20px;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(0);
+    }
+    80% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .overlay-popup {
@@ -105,8 +126,31 @@ html, body {
     justify-content: center;
     align-items: center;
 }
+.overlay-popup.shown > * {
+    animation: pop 0.2s ease-in-out;
+}
 .theme-astral .overlay-popup > * {
     padding: 10px;
     background: linear-gradient(to right, #8800be 0%, #0062be 100%);
     border-radius: 10px;
+}
+
+.show-only-focus:not(:focus):not(:active) {
+    opacity: 0;
+}
+
+#qp-box {
+    width: 60%;
+}
+#qp-box > input {
+    width: calc(100% - 10px);
+    font-size: 2em;
+    font-weight: 100;
+}
+.theme-astral #qp-box > input {
+    background: linear-gradient(to right, #68009e 0%, #00429e 100%);
+    border: 3px solid #ffffff;
+    border-radius: 0.25em;
+    color: #ffffff;
+    font-family: 'Montserrat', sans-serif;
 }
