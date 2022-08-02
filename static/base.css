@@ -1,8 +1,14 @@
 html, body {
     margin: 0;
-    background: linear-gradient(to right, #8800be 0%, #0062be 100%);
+    background: linear-gradient(to right, #000000 0%, #444444 100%);
     width: 100%;
     height: 100%;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.theme-astral {
+    background: linear-gradient(to right, #8800be 0%, #0062be 100%);
     color: white;
     font-family: 'Montserrat', sans-serif;
 }
@@ -22,11 +28,8 @@ html, body {
     width: 100%;
 }
 
-.hidden,.page {
+.hidden:not(.shown),.page:not(.shown) {
     display: none;
-}
-.shown.shown {  /* I love priority hijacking! /s */
-    display: block;
 }
 
 .clickable {
@@ -73,20 +76,49 @@ html, body {
 
 .button-sidebar-task {
     background-color: rgba(0,0,0,0.5);
-    border-right: 3px solid white;
     color: white;
     padding: 10px;
     display: flex;
-    width: calc(100% - 23px);
+    width: calc(100% - 20px);
     text-align: center;
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
-    transition: width 0.2s ease-in, background-color 0.2s ease-in, border-right 0.2s ease-in, padding 0.2s ease-in;
+    transition: width 0.2s ease-in-out, background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
 }
 .button-sidebar-task:hover {
     background-color: rgba(0,0,0,0.7);
     width: calc(100% - 30px);
-    border-right: 0;
     padding-left: 20px;
+}
+
+#overlays {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+}
+.overlay-popup {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 101;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.overlay-popup > * {
+    padding: 10px;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 10px;
+}
+#overlays > * {
+    width: 100%;
+    height: 100%;
 }

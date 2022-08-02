@@ -1,15 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
     <head>
-        <title>WikiReader</title>
+        <title>WikiReader - %:Main Page</title>
         <!-- ES6 modules -->
         <script src="connector.mjs" type="module"></script>
+        <script src="fun.js" defer></script>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet"> 
         <link rel="stylesheet" href="base.css">
     </head>
-    <body>
+    <body class="theme-astral">
         <div id="main" class="fill">
             <div id="main-welcome" class="fill page shown">
                 <div class="sidebar">
@@ -20,8 +21,6 @@
                         <div class="text-mbig sidebar-text">Quickstart</div>
                         <div style="height:10px;"></div>
                         <div class="button-sidebar-task">English Wikipedia</div>
-                        <div style="height:5px;"></div>
-                        <div class="button-sidebar-task">Minecraft Wiki (Fandom)</div>
                         <div style="height:20px;"></div>
                         <div class="button-sidebar-task">Add Wiki...</div>
                         <div style="height:20px;"></div>
@@ -33,9 +32,17 @@
                     <div class="sidebar-footer">
                         <div class="button-sidebar-task">Report Proxy Abuse</div>
                         <div style="height:5px;"></div>
-                        <div class="sidebar-text">Copyright © 2020</div>
+                        <div class="sidebar-text">Copyright © 2022</div>
                         <div class="sidebar-text">PenguinEncounter</div>
+                        <div class="sidebar-text">div counter: <span id="div-counter">???</span></div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div id="overlays" class="fill">
+            <div id="qp" class="overlay-popup hidden shown fill">
+                <div id="qp-box">
+                    <input type="text" id="qp-query">
                 </div>
             </div>
         </div>
