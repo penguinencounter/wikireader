@@ -82,5 +82,11 @@ html, body {
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
-    
+    transition: width 0.2s ease-in, background-color 0.2s ease-in, border-right 0.2s ease-in, padding 0.2s ease-in;
+}
+.button-sidebar-task:hover {
+    background-color: rgba(0,0,0,0.7);
+    width: calc(100% - 30px);
+    border-right: 0;
+    padding-left: 20px;
 }
