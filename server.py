@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, redirect
 import portal
 
 app = Flask(__name__)
@@ -12,6 +12,12 @@ def guess_api():
 @app.route('/portal/<int:site_id>/do')
 def do(site_id):
     return portal.action(site_id, request)
+
+
+@app.route('/')
+def index():
+    return redirect('/static/index.html')
+
 
 
 app.run(host='0.0.0.0', port=8080, debug=True)

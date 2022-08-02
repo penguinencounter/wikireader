@@ -1,0 +1,86 @@
+html, body {
+    margin: 0;
+    background: linear-gradient(to right, #8800be 0%, #0062be 100%);
+    width: 100%;
+    height: 100%;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.fill-v {
+    display: block;
+    height: 100%;
+}
+.fill-h {
+    display: block;
+    width: 100%;
+}
+
+.hidden,.page {
+    display: none;
+}
+.shown.shown {  /* I love priority hijacking! /s */
+    display: block;
+}
+
+.clickable {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (max-width: 600px) {
+    .sidebar {
+        display: flex;
+        width: 100%;
+    }
+}
+@media (min-width: 600px) {
+    .sidebar {
+        display: flex;
+        width: 400px;
+    }
+}
+.sidebar {
+    background-color: rgba(0,0,0,0.5);
+    height: calc(100% - 20px);
+    padding-top: 10px;
+    padding-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.2s ease-in-out;
+}
+.sidebar-space {
+    flex-grow: 2;
+}
+.sidebar .sidebar-text {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.text-big {
+    font-size: 2em;
+}
+.text-mbig {
+    font-size: 1.5em;
+}
+
+.button-sidebar-task {
+    background-color: rgba(0,0,0,0.5);
+    border-right: 3px solid white;
+    color: white;
+    padding: 10px;
+    display: flex;
+    width: calc(100% - 23px);
+    text-align: center;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    
+}
