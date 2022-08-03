@@ -7,6 +7,16 @@ function requestExpandedContent(page) {
     }
 }
 
+function searchWiki(query) {
+    return {
+        action: "query",
+        list: "search",
+        srsearch: query,
+        srprop: "snippet",
+        srlimit: "10"
+    }
+}
+
 window.debugAccess = window.debugAccess??{};
 window.debugAccess.actions = {
     requestExpandedContent: requestExpandedContent

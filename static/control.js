@@ -1,8 +1,12 @@
-let keyHandlers = {};
 let currentReaderContext = {
     wiki: 'https://en.wikipedia.org',
     page: 'WP:Sandbox'
 };
+let registeredWikis = {
+    'wp': 'https://en.wikipedia.org'
+}
+
+let keyHandlers = {};
 function registerKeyHandler(key, handler) {
     keyHandlers[key] = keyHandlers[key]??[];  // new favorite operator
     keyHandlers[key].push(handler);
@@ -72,6 +76,11 @@ const COMMAND_PARSERS = {
         requirements: ctx => !!ctx.page
     }
 }
+const RESULT_PROVIDERS = {
+    searchResults: {
+        
+    }
+}
 
 for (let testidx = 0; testidx < 20; testidx++) {
     COMMAND_PARSERS['test' + testidx] = {
@@ -113,12 +122,20 @@ function updateCmdPromptOut(resultData) {
     let outputContainer = document.querySelector('#qp .item-list-container');
     outputContainer.innerHTML = '';
     outputContainer.setAttribute('data-selected-idx', (0).toString());
-    let createItem = (data, selected) => {
+    let hoverSelector = e => {
+        let idx = +e.currentTarget.getAttribute('data-idx');
+        updateCmdPromptSelection(idx, false);
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    let createItem = (data, id, selected) => {
         let item = document.createElement('div');
         if (selected) {
             item.classList.add('selected');
         }
-        
+        item.setAttribute('data-idx', id.toString());
+        item.addEventListener('mousemove', hoverSelector);
+
         let mainText = document.createElement('div');
         mainText.classList.add('text-mbig');
         mainText.innerHTML = data.result;
@@ -131,16 +148,17 @@ function updateCmdPromptOut(resultData) {
     }
     let i = 0;
     for (let result of resultData) {
-        let item = createItem(result, i === 0);
+        let item = createItem(result, i, i === 0);
         outputContainer.appendChild(item);
         i++;
     }
     if (resultData.length === 0) {
-        let item = createItem({result: 'Invalid command', command: '', data: null}, true);
+        let item = createItem({result: 'Invalid command', command: '', data: null}, 0, true);
         outputContainer.appendChild(item);
     }
 }
-function updateCmdPromptSelection(idx) {
+function updateCmdPromptSelection(idx, autoscroll) {
+    autoscroll = autoscroll??true;
     let outputContainer = document.querySelector('#qp .item-list-container');
     idx = idx??+outputContainer.getAttribute('data-selected-idx');
     outputContainer.setAttribute('data-selected-idx', idx.toString());
@@ -150,7 +168,7 @@ function updateCmdPromptSelection(idx) {
     }
     if (idx < items.length) {
         items[idx].classList.add('selected');
-        items[idx].scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+        if (autoscroll) items[idx].scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
     } else {
         console.warn('Invalid index', idx, 'for', items.length, 'items in command prompt');
         items[0].classList.add('selected');

@@ -104,3 +104,9 @@ window.debugAccess.connector = {
     lowQuery: lowQuery,
     queryWithContinues: queryWithContinues
 };
+
+window.bridge = {
+    provideAccess: provideAccess,
+    lowQuery: lowQuery,
+    queryWithContinues: queryWithContinues
+}
