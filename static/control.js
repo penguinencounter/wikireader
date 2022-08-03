@@ -1,4 +1,8 @@
 let keyHandlers = {};
+let currentReaderContext = {
+    wiki: null,
+    page: null
+};
 function registerKeyHandler(key, handler) {
     keyHandlers[key] = keyHandlers[key]??[];  // new favorite operator
     keyHandlers[key].push(handler);
@@ -43,6 +47,47 @@ const KEY_ALIAS = {
     Multiply: '*',
     Divide: '/',
     Subtract: '-'
+}
+
+
+const COMMAND_PARSERS = {
+    gotoPageInterwiki: {
+        match: /^(\w+)!([^#<>[\]{}|]+)$/,
+        fmt: results => `Go to ${results[2]} on ${results[1]}`,
+        requirements: ctx => true
+    },
+    gotoPage: {
+        match: /^([^#<>[\]{}|]+)$/,
+        requirements: ctx => !!ctx.wiki
+    }
+}
+
+
+/*
+command ctx = {
+    wiki: string = current wiki or null,
+    page: string = current page or null
+}
+*/
+
+
+function handleCommand(input) {
+    let results = [];
+    for (let entry of Object.entries(COMMAND_PARSERS)) {
+        let [name, parser] = entry;
+        if (!parser.requirements(currentReaderContext)) {
+            console.debug('Skipping', name, 'because requirements not met');
+            continue;
+        }
+        let match = parser.match.exec(input);
+        if (!match) continue;
+        results.push({
+            result: parser.fmt(match),
+            command: name,
+            data: match
+        });
+    }
+    return results;
 }
 
 

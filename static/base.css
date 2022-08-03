@@ -3,7 +3,7 @@
     font-family: 'Montserrat';
     src: url('fonts/MontserratVar.ttf') format('truetype');
     font-weight: 100 900;
-    
+
 }
 
 
@@ -83,21 +83,32 @@ html, body {
     font-size: 1.5em;
 }
 
+.theme-astral .key {
+    font-family: monospace;
+    background-color: rgba(0,0,0,0.5);
+    padding: 3px 3px 1px 3px;
+    border-radius: 3px;
+    border-bottom: 2px solid #666666;
+
+}
+
 .button-sidebar-task {
     background-color: rgba(0,0,0,0.5);
     color: white;
+    border: none;
     padding: 10px;
     display: flex;
-    width: calc(100% - 20px);
+    width: 100%;
     text-align: center;
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
     transition: width 0.2s ease-in-out, background-color 0.2s ease-in-out, padding 0.2s ease-in-out;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1em;
 }
 .button-sidebar-task:hover, .button-sidebar-task:focus {
     background-color: rgba(0,0,0,0.7);
-    width: calc(100% - 30px);
     padding-left: 20px;
 }
 
@@ -145,7 +156,7 @@ html, body {
 #qp-box > input {
     width: calc(100% - 10px);
     font-size: 2em;
-    font-weight: 100;
+    font-weight: 300;
 }
 .theme-astral #qp-box > input {
     background: linear-gradient(to right, #68009e 0%, #00429e 100%);
