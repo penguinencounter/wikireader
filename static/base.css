@@ -6,6 +6,26 @@
 
 }
 
+.theme-astral #dev-banner {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+    width: max-content;
+    height: min-content;
+    background: repeating-linear-gradient(45deg,
+        #000,
+        #000 10px,
+        #880 10px,
+        #880 20px
+    );
+    color: white;
+    font-weight: 800;
+    z-index: 9999;
+    border-radius: 5px;
+    box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.5);
+    padding: 10px;
+}
+
 
 html, body {
     margin: 0;
