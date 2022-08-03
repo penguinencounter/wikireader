@@ -1,3 +1,5 @@
+window.bridge = window.bridge??{};
+
 let currentReaderContext = {
     wiki: 'https://en.wikipedia.org',
     page: 'WP:Sandbox'
@@ -5,6 +7,7 @@ let currentReaderContext = {
 let registeredWikis = {
     'wp': 'https://en.wikipedia.org'
 }
+let conn = {}
 
 let keyHandlers = {};
 function registerKeyHandler(key, handler) {
@@ -76,9 +79,49 @@ const COMMAND_PARSERS = {
         requirements: ctx => !!ctx.page
     }
 }
+const SCORES = {
+    matchingSeqWord: 8,
+    fullMatchBeginning: 20,
+    fullMatchMiddle: 10
+}
 const RESULT_PROVIDERS = {
     searchResults: {
-        
+        provider: async (query, ctx) => {
+            let allResults = []
+            for (let wikiPair of Object.entries(registeredWikis)) {
+                let [name, wiki] = wikiPair;
+                let wikiResults = []
+                if (!Object.keys(conn).includes(wiki)) {
+                    console.log(`searchResults - connecting to ${wiki}`);
+                    conn[wiki] = await window.bridge.provideAccess(wiki);
+                }
+                let task = window.bridge.actions.searchWiki(query);
+                let results = await window.bridge.lowQuery(conn[wiki], task);
+                for (let result of results.query.search) {
+                    let score = 0;
+                    if (result.title.toLowerCase().includes(query.trim().toLowerCase())) {
+                        score += SCORES.fullMatchMiddle;
+                    }
+                    if (result.title.toLowerCase().startsWith(query.trim().toLowerCase())) {
+                        score += SCORES.fullMatchBeginning;
+                    } 
+                    for (let word of query.split(' ')) {
+                        if (result.title.toLowerCase().includes(word.toLowerCase())) {
+                            score += SCORES.matchingSeqWord;
+                        }
+                    }
+                    wikiResults.push({
+                        result: `${name}: ${result.title}`,
+                        prio: score,
+                        command: `Search results on ${name}`,
+                        data: [result.title]
+                    });
+                }
+                allResults = allResults.concat(wikiResults);
+            }
+            allResults.sort((a, b) => b.prio - a.prio);
+            return allResults;
+        }
     }
 }
 
@@ -118,34 +161,37 @@ function handleCommand(input) {
 }
 
 
-function updateCmdPromptOut(resultData) {
-    let outputContainer = document.querySelector('#qp .item-list-container');
-    outputContainer.innerHTML = '';
-    outputContainer.setAttribute('data-selected-idx', (0).toString());
+let createItem = (data, id, selected) => {
     let hoverSelector = e => {
         let idx = +e.currentTarget.getAttribute('data-idx');
         updateCmdPromptSelection(idx, false);
         e.preventDefault();
         e.stopPropagation();
     }
-    let createItem = (data, id, selected) => {
-        let item = document.createElement('div');
-        if (selected) {
-            item.classList.add('selected');
-        }
-        item.setAttribute('data-idx', id.toString());
-        item.addEventListener('mousemove', hoverSelector);
 
-        let mainText = document.createElement('div');
-        mainText.classList.add('text-mbig');
-        mainText.innerHTML = data.result;
-        item.appendChild(mainText);
-        let tagText = document.createElement('div');
-        tagText.classList.add('debug');
-        tagText.innerHTML = data.command;
-        item.appendChild(tagText);
-        return item;
+    let item = document.createElement('div');
+    if (selected) {
+        item.classList.add('selected');
     }
+    item.setAttribute('data-idx', id.toString());
+    item.addEventListener('mousemove', hoverSelector);
+
+    let mainText = document.createElement('div');
+    mainText.classList.add('text-mbig');
+    mainText.innerHTML = data.result;
+    item.appendChild(mainText);
+    let tagText = document.createElement('div');
+    tagText.classList.add('debug');
+    tagText.innerHTML = data.command;
+    item.appendChild(tagText);
+    return item;
+}
+
+
+function updateCmdPromptOut(resultData) {
+    let outputContainer = document.querySelector('#qp .item-list-container');
+    outputContainer.innerHTML = '';
+    outputContainer.setAttribute('data-selected-idx', (0).toString());
     let i = 0;
     for (let result of resultData) {
         let item = createItem(result, i, i === 0);
@@ -153,10 +199,24 @@ function updateCmdPromptOut(resultData) {
         i++;
     }
     if (resultData.length === 0) {
-        let item = createItem({result: 'Invalid command', command: '', data: null}, 0, true);
+        let item = createItem({result: 'Invalid command', command: '', data: null}, 'noresults', true);
         outputContainer.appendChild(item);
     }
 }
+function appendCmdPromptOut(resultData) {
+    let outputContainer = document.querySelector('#qp .item-list-container');
+    let i = document.querySelectorAll('#qp .item-list-container > div').length;
+    if (document.querySelector('#qp .item-list-container > div[data-idx="noresults"]')) {
+        outputContainer.innerHTML = '';
+        i = 0;
+    }
+    for (let result of resultData) {
+        let item = createItem(result, i, i === 0);
+        outputContainer.appendChild(item);
+        i++;
+    }
+}
+
 function updateCmdPromptSelection(idx, autoscroll) {
     autoscroll = autoscroll??true;
     let outputContainer = document.querySelector('#qp .item-list-container');
@@ -174,6 +234,9 @@ function updateCmdPromptSelection(idx, autoscroll) {
         items[0].classList.add('selected');
     }
 }
+
+
+let inputTimeoutID = null;
 
 
 window.addEventListener('load', () => {
@@ -246,6 +309,19 @@ window.addEventListener('load', () => {
     document.querySelector('#qp input').addEventListener('input', e => {
         let input = e.target.value;
         let results = handleCommand(input);
+        inputTimeoutID && clearTimeout(inputTimeoutID);
+        inputTimeoutID = setTimeout(() => {
+            for (let asyncHandler of Object.values(RESULT_PROVIDERS)) {
+                
+                let worker = async fun => {
+                    let aResults = await fun(input, currentReaderContext);
+                    if (aResults) {
+                        appendCmdPromptOut(aResults);
+                    }
+                }
+                worker(asyncHandler.provider);
+            }
+        }, 200);
         updateCmdPromptOut(results);
     })
 })

@@ -19,5 +19,11 @@ function searchWiki(query) {
 
 window.debugAccess = window.debugAccess??{};
 window.debugAccess.actions = {
-    requestExpandedContent: requestExpandedContent
+    requestExpandedContent: requestExpandedContent,
+    searchWiki: searchWiki
 };
+window.bridge = window.bridge??{};
+window.bridge.actions = {
+    requestExpandedContent: requestExpandedContent,
+    searchWiki: searchWiki
+}
