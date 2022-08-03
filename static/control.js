@@ -1,7 +1,7 @@
 let keyHandlers = {};
 let currentReaderContext = {
-    wiki: null,
-    page: null
+    wiki: 'https://en.wikipedia.org',
+    page: 'WP:Sandbox'
 };
 function registerKeyHandler(key, handler) {
     keyHandlers[key] = keyHandlers[key]??[];  // new favorite operator
@@ -51,17 +51,35 @@ const KEY_ALIAS = {
 
 
 const COMMAND_PARSERS = {
+    goHome: {
+        match: /^%h(?:ome)?$/,
+        fmt: () => `Go to WikiReader home`,
+        requirements: () => true
+    },
     gotoPageInterwiki: {
-        match: /^(\w+)!([^#<>[\]{}|]+)$/,
+        match: /^%goto (\w+)!([^#<>[\]{}|]+)$/,
         fmt: results => `Go to ${results[2]} on ${results[1]}`,
-        requirements: ctx => true
+        requirements: () => true
     },
     gotoPage: {
-        match: /^([^#<>[\]{}|]+)$/,
+        match: /^%goto ([^#<>[\]{}|]+)$/,
+        fmt: results => `Go to ${results[1]}`,
         requirements: ctx => !!ctx.wiki
+    },
+    section: {
+        match: /^#(.+)$/,
+        fmt: results => `Go to section ${results[1]}`,
+        requirements: ctx => !!ctx.page
     }
 }
 
+for (let testidx = 0; testidx < 20; testidx++) {
+    COMMAND_PARSERS['test' + testidx] = {
+        match: /test/,
+        fmt: () => `Test ${testidx}`,
+        requirements: () => true
+    }
+}
 
 /*
 command ctx = {
@@ -88,6 +106,55 @@ function handleCommand(input) {
         });
     }
     return results;
+}
+
+
+function updateCmdPromptOut(resultData) {
+    let outputContainer = document.querySelector('#qp .item-list-container');
+    outputContainer.innerHTML = '';
+    outputContainer.setAttribute('data-selected-idx', (0).toString());
+    let createItem = (data, selected) => {
+        let item = document.createElement('div');
+        if (selected) {
+            item.classList.add('selected');
+        }
+        
+        let mainText = document.createElement('div');
+        mainText.classList.add('text-mbig');
+        mainText.innerHTML = data.result;
+        item.appendChild(mainText);
+        let tagText = document.createElement('div');
+        tagText.classList.add('debug');
+        tagText.innerHTML = data.command;
+        item.appendChild(tagText);
+        return item;
+    }
+    let i = 0;
+    for (let result of resultData) {
+        let item = createItem(result, i === 0);
+        outputContainer.appendChild(item);
+        i++;
+    }
+    if (resultData.length === 0) {
+        let item = createItem({result: 'Invalid command', command: '', data: null}, true);
+        outputContainer.appendChild(item);
+    }
+}
+function updateCmdPromptSelection(idx) {
+    let outputContainer = document.querySelector('#qp .item-list-container');
+    idx = idx??+outputContainer.getAttribute('data-selected-idx');
+    outputContainer.setAttribute('data-selected-idx', idx.toString());
+    let items = document.querySelectorAll('#qp .item-list-container > div');
+    for (let i = 0; i < items.length; i++) {
+        items[i].classList.remove('selected');
+    }
+    if (idx < items.length) {
+        items[idx].classList.add('selected');
+        items[idx].scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+    } else {
+        console.warn('Invalid index', idx, 'for', items.length, 'items in command prompt');
+        items[0].classList.add('selected');
+    }
 }
 
 
@@ -135,5 +202,32 @@ window.addEventListener('load', () => {
         document.querySelectorAll('#qp input.autoclean').forEach(e => e.value = '');
         e.preventDefault();
         e.stopPropagation();
+    })
+    registerKeyHandler('ArrowDown', e => {
+        if (document.querySelector('#qp.shown')) {
+            let count = document.querySelectorAll('#qp .item-list-container > div').length;
+            let idx = +document.querySelector('#qp .item-list-container').getAttribute('data-selected-idx');
+            idx = (idx + 1) % count;
+            updateCmdPromptSelection(idx);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    })
+    registerKeyHandler('ArrowUp', e => {
+        if (document.querySelector('#qp.shown')) {
+            let count = document.querySelectorAll('#qp .item-list-container > div').length;
+            let idx = +document.querySelector('#qp .item-list-container').getAttribute('data-selected-idx');
+            idx = idx - 1;
+            idx += idx < 0 ? count : 0;
+            updateCmdPromptSelection(idx);
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    })
+    updateCmdPromptOut([]);
+    document.querySelector('#qp input').addEventListener('input', e => {
+        let input = e.target.value;
+        let results = handleCommand(input);
+        updateCmdPromptOut(results);
     })
 })
