@@ -266,7 +266,7 @@ function flushCmdPromptList() {
     outputContainer.setAttribute('data-selected-idx', selected.toString());
     // put the 'noresults' item back in the list
     if (i === 0) {
-        let item = createItem({result: '(No results.)', command: '', data: null}, 'noresults', true);
+        let item = createItem({result: '(No results. More may appear soon.)', command: '', data: null}, 'noresults', true);
         outputContainer.appendChild(item);
     }
     // autoscroll
