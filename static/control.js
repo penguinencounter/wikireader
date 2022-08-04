@@ -57,25 +57,41 @@ const KEY_ALIAS = {
 }
 
 
+let delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+async function reqLock(ctx) {
+    let timeStart = new Date().getTime();
+    while (ctx.lock) await delay(10);
+    let timeDelta = (new Date().getTime()) - timeStart;
+    ctx.lock = true;
+}
+function releaseLock(ctx) {
+    ctx.lock = false;
+}
+
+
 const COMMAND_PARSERS = {
     goHome: {
         match: /^%h(?:ome)?$/,
         fmt: () => `Go to WikiReader home`,
+        prio: 100,
         requirements: () => true
     },
     gotoPageInterwiki: {
         match: /^%goto (\w+)!([^#<>[\]{}|]+)$/,
         fmt: results => `Go to ${results[2]} on ${results[1]}`,
+        prio: 91,
         requirements: () => true
     },
     gotoPage: {
         match: /^%goto ([^#<>[\]{}|]+)$/,
         fmt: results => `Go to ${results[1]}`,
+        prio: 90,
         requirements: ctx => !!ctx.wiki
     },
     section: {
         match: /^#(.+)$/,
         fmt: results => `Go to section ${results[1]}`,
+        prio: 92,
         requirements: ctx => !!ctx.page
     }
 }
@@ -86,7 +102,9 @@ const SCORES = {
 }
 const RESULT_PROVIDERS = {
     searchResults: {
-        provider: async (query, ctx) => {
+        lock: false,
+        provider: async (query, ctx, providerCtx) => {
+            await reqLock(providerCtx);
             let allResults = []
             for (let wikiPair of Object.entries(registeredWikis)) {
                 let [name, wiki] = wikiPair;
@@ -120,6 +138,7 @@ const RESULT_PROVIDERS = {
                 allResults = allResults.concat(wikiResults);
             }
             allResults.sort((a, b) => b.prio - a.prio);
+            releaseLock(providerCtx);
             return allResults;
         }
     }
@@ -216,6 +235,28 @@ function appendCmdPromptOut(resultData) {
         i++;
     }
 }
+function flushCmdPromptList() {
+    // Intake all items and put them in a list
+    let items = document.querySelectorAll('#qp .item-list-container > div');
+    // and sort them
+    items.sort((a, b) => b.prio - a.prio)
+    // and put them back in the list
+    let outputContainer = document.querySelector('#qp .item-list-container');
+    outputContainer.innerHTML = '';
+    let i = 0;
+    let selected = 0;
+    for (let item of items) {
+        item.setAttribute('data-idx', i.toString());
+        outputContainer.appendChild(item);
+        if (item.classList.contains('selected')) {
+            selected = i;
+        }
+        i++;
+    }
+    // recompute the selected index on the container
+    outputContainer.setAttribute('data-selected-idx', selected.toString());
+    // done
+}
 
 function updateCmdPromptSelection(idx, autoscroll) {
     autoscroll = autoscroll??true;
@@ -310,16 +351,15 @@ window.addEventListener('load', () => {
         let input = e.target.value;
         let results = handleCommand(input);
         inputTimeoutID && clearTimeout(inputTimeoutID);
+        let worker = async handler => {
+            let aResults = await handler.provider(input, currentReaderContext, handler);
+            if (aResults) {
+                appendCmdPromptOut(aResults);
+            }
+        }
         inputTimeoutID = setTimeout(() => {
             for (let asyncHandler of Object.values(RESULT_PROVIDERS)) {
-                
-                let worker = async fun => {
-                    let aResults = await fun(input, currentReaderContext);
-                    if (aResults) {
-                        appendCmdPromptOut(aResults);
-                    }
-                }
-                worker(asyncHandler.provider);
+                worker(asyncHandler);
             }
         }, 200);
         updateCmdPromptOut(results);
