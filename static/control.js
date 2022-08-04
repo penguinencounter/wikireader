@@ -60,8 +60,19 @@ const KEY_ALIAS = {
 let delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function reqLock(ctx) {
     let timeStart = new Date().getTime();
-    while (ctx.lock) await delay(10);
+    while (ctx.lock) {
+        await delay(10);
+        let cdt = new Date().getTime() - timeStart;
+        if (cdt > 2000) {
+            console.warn(`requesting lock is taking a while... ${cdt}ms`);
+        }
+        if (cdt > 10000) {
+            console.error('requesting lock for too long, giving up. ' + cdt + 'ms. race conditions may occur!');
+            break;
+        }
+    }
     let timeDelta = (new Date().getTime()) - timeStart;
+    console.log('Waited', timeDelta, 'ms to get lock');
     ctx.lock = true;
 }
 function releaseLock(ctx) {
@@ -113,8 +124,13 @@ const RESULT_PROVIDERS = {
                     console.log(`searchResults - connecting to ${wiki}`);
                     conn[wiki] = await window.bridge.provideAccess(wiki);
                 }
+                if (!conn[wiki]) {
+                    console.log(`searchResults - race prevented - connecting to ${wiki}`);
+                    continue;
+                }
                 let task = window.bridge.actions.searchWiki(query);
                 let results = await window.bridge.lowQuery(conn[wiki], task);
+                if (!results.query) continue;
                 for (let result of results.query.search) {
                     let score = 0;
                     if (result.title.toLowerCase().includes(query.trim().toLowerCase())) {
@@ -137,7 +153,6 @@ const RESULT_PROVIDERS = {
                 }
                 allResults = allResults.concat(wikiResults);
             }
-            allResults.sort((a, b) => b.prio - a.prio);
             releaseLock(providerCtx);
             return allResults;
         }
@@ -207,37 +222,31 @@ let createItem = (data, id, selected) => {
 }
 
 
-function updateCmdPromptOut(resultData) {
+function updateCmdPromptSelection(idx, autoscroll) {
+    autoscroll = autoscroll??true;
     let outputContainer = document.querySelector('#qp .item-list-container');
-    outputContainer.innerHTML = '';
-    outputContainer.setAttribute('data-selected-idx', (0).toString());
-    let i = 0;
-    for (let result of resultData) {
-        let item = createItem(result, i, i === 0);
-        outputContainer.appendChild(item);
-        i++;
+    idx = idx??+outputContainer.getAttribute('data-selected-idx');
+    outputContainer.setAttribute('data-selected-idx', idx.toString());
+    let items = document.querySelectorAll('#qp .item-list-container > div');
+    for (let i = 0; i < items.length; i++) {
+        items[i].classList.remove('selected');
     }
-    if (resultData.length === 0) {
-        let item = createItem({result: 'Invalid command', command: '', data: null}, 'noresults', true);
-        outputContainer.appendChild(item);
+    if (idx < items.length) {
+        items[idx].classList.add('selected');
+        if (autoscroll) items[idx].scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+    } else {
+        console.warn('Invalid index', idx, 'for', items.length, 'items in command prompt');
+        items[0].classList.add('selected');
     }
 }
-function appendCmdPromptOut(resultData) {
-    let outputContainer = document.querySelector('#qp .item-list-container');
-    let i = document.querySelectorAll('#qp .item-list-container > div').length;
-    if (document.querySelector('#qp .item-list-container > div[data-idx="noresults"]')) {
-        outputContainer.innerHTML = '';
-        i = 0;
-    }
-    for (let result of resultData) {
-        let item = createItem(result, i, i === 0);
-        outputContainer.appendChild(item);
-        i++;
-    }
-}
+
 function flushCmdPromptList() {
+    // discard 'noresults' item
+    document.querySelector('#qp .item-list-container > div[data-idx="noresults"]')?.remove &&  // woo ASI
+        document.querySelector('#qp .item-list-container > div[data-idx="noresults"]').remove();
     // Intake all items and put them in a list
     let items = document.querySelectorAll('#qp .item-list-container > div');
+    items = Array.from(items);  // 'sort' is not defined on NodeList. Convert to array.
     // and sort them
     items.sort((a, b) => b.prio - a.prio)
     // and put them back in the list
@@ -255,25 +264,35 @@ function flushCmdPromptList() {
     }
     // recompute the selected index on the container
     outputContainer.setAttribute('data-selected-idx', selected.toString());
-    // done
+    // put the 'noresults' item back in the list
+    if (i === 0) {
+        let item = createItem({result: '(No results.)', command: '', data: null}, 'noresults', true);
+        outputContainer.appendChild(item);
+    }
+    // autoscroll
+    updateCmdPromptSelection(selected);
 }
-
-function updateCmdPromptSelection(idx, autoscroll) {
-    autoscroll = autoscroll??true;
+function updateCmdPromptOut(resultData) {
     let outputContainer = document.querySelector('#qp .item-list-container');
-    idx = idx??+outputContainer.getAttribute('data-selected-idx');
-    outputContainer.setAttribute('data-selected-idx', idx.toString());
-    let items = document.querySelectorAll('#qp .item-list-container > div');
-    for (let i = 0; i < items.length; i++) {
-        items[i].classList.remove('selected');
+    outputContainer.innerHTML = '';
+    outputContainer.setAttribute('data-selected-idx', (0).toString());
+    let i = 0;
+    for (let result of resultData) {
+        let item = createItem(result, i, i === 0);
+        outputContainer.appendChild(item);
+        i++;
     }
-    if (idx < items.length) {
-        items[idx].classList.add('selected');
-        if (autoscroll) items[idx].scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
-    } else {
-        console.warn('Invalid index', idx, 'for', items.length, 'items in command prompt');
-        items[0].classList.add('selected');
+    flushCmdPromptList();
+}
+function appendCmdPromptOut(resultData) {
+    let outputContainer = document.querySelector('#qp .item-list-container');
+    let i = document.querySelectorAll('#qp .item-list-container > div').length;
+    for (let result of resultData) {
+        let item = createItem(result, i, i === 0);
+        outputContainer.appendChild(item);
+        i++;
     }
+    flushCmdPromptList();
 }
 
 
@@ -368,6 +387,14 @@ window.addEventListener('load', () => {
         if (!await window.bridge.hasValidServer()) {
             let banner = document.getElementById('dev-banner');
             banner.innerHTML = 'SERVERLESS<br>' + banner.innerHTML
+        }
+        for (let wikiPair of Object.entries(registeredWikis)) {
+            let [name, wiki] = wikiPair;
+            if (!Object.keys(conn).includes(wiki)) {
+                console.log(`load - connecting to ${wiki}`);
+                conn[wiki] = null;  // reserve the space for the connection (prevent racing)
+                conn[wiki] = await window.bridge.provideAccess(wiki);
+            }
         }
     })();  // Context switch
 })
