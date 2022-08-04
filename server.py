@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, abort
 import portal
 
 app = Flask(__name__)
@@ -17,6 +17,12 @@ def do(site_id):
 @app.route('/')
 def index():
     return redirect('/static/index.html')
+
+
+# Yes, this is required for the client to use the server.
+@app.route('/is_there_a_server_here')
+def is_there_a_server_here():
+    return 'Yes, silly!'
 
 
 

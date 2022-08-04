@@ -363,5 +363,11 @@ window.addEventListener('load', () => {
             }
         }, 200);
         updateCmdPromptOut(results);
-    })
+    });
+    (async () => {
+        if (!await window.bridge.hasValidServer()) {
+            let banner = document.getElementById('dev-banner');
+            banner.innerHTML = 'SERVERLESS<br>' + banner.innerHTML
+        }
+    })();  // Context switch
 })

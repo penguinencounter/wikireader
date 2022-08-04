@@ -6,6 +6,16 @@ import * as actions from './actions.mjs';
 
 const TEST_SITE = "https://en.wikipedia.org";  // known works
 const CONNECTION_KEYS = ['success', 'connectionType', 'apiTarget']
+let serverful = false;
+
+
+async function hasValidServer() {
+    try {
+        let result = await fetch('/is_there_a_server_here')
+        serverful = result.status === 200;
+        return result.status === 200
+    } catch {return false;}
+}
 
 
 async function provideAccess(site, forcedTarget) {
@@ -19,7 +29,7 @@ async function provideAccess(site, forcedTarget) {
                 return { success: false }
             }
             return { success: true, connectionType: "local", apiTarget: local_result }
-        } else if (forcedTarget == "proxy") {
+        } else if (forcedTarget == "proxy" && serverful) {
             let result = await proxy.connect(site)
             if (result == null) {
                 console.warn(`${site} access failed (forced proxy)`)
@@ -32,7 +42,7 @@ async function provideAccess(site, forcedTarget) {
     if (localResult == null) {
         console.log(`local access failed for ${site}, trying proxy`)
         let proxyResult = await proxy.connect(site)
-        if (proxyResult == null) {
+        if (proxyResult == null || !serverful) {
             console.warn(`${site} access failed`)
             return {
                 success: false
@@ -109,3 +119,4 @@ window.bridge = window.bridge??{};
 window.bridge.provideAccess = provideAccess;
 window.bridge.lowQuery = lowQuery;
 window.bridge.queryWithContinues = queryWithContinues;
+window.bridge.hasValidServer = hasValidServer;
