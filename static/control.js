@@ -60,6 +60,10 @@ const KEY_ALIAS = {
 let delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 async function reqLock(ctx) {
     let timeStart = new Date().getTime();
+    if (ctx.lock && ctx.disallowConcurrent) {
+        console.debug('Lock already held, cancelling...');
+        return false
+    }
     while (ctx.lock) {
         await delay(10);
         let cdt = new Date().getTime() - timeStart;
@@ -74,6 +78,7 @@ async function reqLock(ctx) {
     let timeDelta = (new Date().getTime()) - timeStart;
     console.log('Waited', timeDelta, 'ms to get lock');
     ctx.lock = true;
+    return true;
 }
 function releaseLock(ctx) {
     ctx.lock = false;
@@ -114,8 +119,11 @@ const SCORES = {
 const RESULT_PROVIDERS = {
     searchResults: {
         lock: false,
+        disallowConcurrent: true,
         provider: async (query, ctx, providerCtx) => {
-            await reqLock(providerCtx);
+            if (!await reqLock(providerCtx)) {
+                return;
+            };
             let allResults = []
             for (let wikiPair of Object.entries(registeredWikis)) {
                 let [name, wiki] = wikiPair;
@@ -145,10 +153,11 @@ const RESULT_PROVIDERS = {
                         }
                     }
                     wikiResults.push({
-                        result: `${name}: ${result.title}`,
+                        result: `${result.title}`,
                         prio: score,
-                        command: `Search results on ${name}`,
-                        data: [result.title]
+                        command: `Search - ${query} on ${name}`,
+                        data: [result.title],
+                        query: query,
                     });
                 }
                 allResults = allResults.concat(wikiResults);
@@ -158,6 +167,10 @@ const RESULT_PROVIDERS = {
         }
     }
 }
+
+let cmdPromptList = [
+    
+]
 
 for (let testidx = 0; testidx < 20; testidx++) {
     COMMAND_PARSERS['test' + testidx] = {
@@ -383,6 +396,21 @@ window.addEventListener('load', () => {
         }, 200);
         updateCmdPromptOut(results);
     });
+
+    setInterval(() => {
+        let newEl = document.createElement('div');
+
+        let time = Math.round((Math.random() * 5 + 2) * 100)/100;
+
+        newEl.classList.add('particle-background');
+        newEl.style.top = Math.random() * 100 + '%';
+        newEl.style.animation = `bg-travel ${time}s linear forwards`;
+        newEl.style.width = Math.random() * 50 + 'px';
+        newEl.style.height = newEl.style.width;
+        setTimeout(() => newEl.remove(), time * 1000);
+        document.body.appendChild(newEl);
+    }, 100);
+
     (async () => {
         if (!await window.bridge.hasValidServer()) {
             let banner = document.getElementById('dev-banner');
